@@ -203,6 +203,7 @@ class Legacy implements IOHandlerInterface
             {
                 $this->logger->error( "Legacy file with SPI id $spiBinaryFileId not found in storage directory {$this->storageDirectory}" );
             }
+            throw new NotFoundException( 'BinaryFile', $spiBinaryFileId );
         }
         $storagePath = $this->getStoragePath( $spiBinaryFileId );
         $clusterHandler = $this->getClusterHandler();
@@ -234,6 +235,7 @@ class Legacy implements IOHandlerInterface
             {
                 $this->logger->error( "Legacy file with SPI id $spiBinaryFileId not found in storage directory {$this->storageDirectory}" );
             }
+            throw new NotFoundException( 'BinaryFile', $spiBinaryFileId );
         }
 
         $destinationPath = $updateFileStruct->id;
@@ -323,6 +325,7 @@ class Legacy implements IOHandlerInterface
             {
                 $this->logger->error( "Legacy file with SPI id $spiBinaryFileId not found in storage directory {$this->storageDirectory}" );
             }
+            throw new NotFoundException( 'BinaryFile', $spiBinaryFileId );
         }
 
         $storagePath = $this->getStoragePath( $spiBinaryFileId );
@@ -365,6 +368,10 @@ class Legacy implements IOHandlerInterface
     {
         if ( !$this->exists( $spiBinaryFileId ) )
         {
+            if ( isset( $this->logger ) )
+            {
+                $this->logger->error( "Legacy file with SPI id $spiBinaryFileId not found in storage directory {$this->storageDirectory}" );
+            }
             throw new NotFoundException( "spiBinaryFile", $spiBinaryFileId );
         }
         return $this->getFileResourceProvider()->getResource( $this->getStoragePath( $spiBinaryFileId ) );
@@ -387,6 +394,7 @@ class Legacy implements IOHandlerInterface
             {
                 $this->logger->error( "Legacy file with SPI id $spiBinaryFileId not found in storage directory {$this->storageDirectory}" );
             }
+            throw new NotFoundException( 'BinaryFile', $spiBinaryFileId );
         }
 
         $storagePath = $this->getStoragePath( $spiBinaryFileId );
@@ -517,6 +525,7 @@ class Legacy implements IOHandlerInterface
             {
                 $this->logger->error( "Legacy file with path $path" );
             }
+            throw new NotFoundException( 'BinaryFile', $path);
         }
 
         return $returnValue;

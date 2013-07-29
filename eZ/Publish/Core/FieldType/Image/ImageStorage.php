@@ -117,7 +117,12 @@ class ImageStorage extends GatewayBasedStorage
                 $this->getGateway( $context )->getNodePathString( $versionInfo, $field->id )
             ) . '/' . $field->value->externalData['fileName'];
 
-            if ( !$binaryFile = $this->IOService->loadBinaryFile( $targetPath ) )
+
+            if ( $this->IOService->exists( $targetPath ) )
+            {
+                $binaryFile = $this->IOService->loadBinaryFile( $targetPath );
+            }
+            else
             {
                 $binaryFileCreateStruct = $this->IOService->newBinaryCreateStructFromLocalFile(
                     $field->value->externalData['id']
@@ -148,10 +153,19 @@ class ImageStorage extends GatewayBasedStorage
                 return false;
             }
 
-            $binaryFile = $this->IOService->loadBinaryFile( $this->IOService->getExternalPath( $field->value->data['id'] ) );
+            try
+            {
+                $this->IOService->loadBinaryFile( $this->IOService->getExternalPath( $field->value->data['id'] ) );
+                $metadata = $this->IOService->getMetadata( $this->imageSizeMetadataHandler, $binaryFile );
+            }
+            catch ( NotFoundException $e )
+            {
+                return;
+            }
+
             $field->value->data = array_merge(
                 $field->value->data,
-                $this->IOService->getMetadata( $this->imageSizeMetadataHandler, $binaryFile ),
+                $metadata,
                 $contentMetaData
             );
             $field->value->externalData = null;
@@ -204,9 +218,14 @@ class ImageStorage extends GatewayBasedStorage
             // @todo wrap this within a dedicated service that uses the handler + service under the hood
             // Required since images are stored with their full path, e.g. uri with a Legacy compatible IO handler
             $binaryFileId = $this->IOService->getExternalPath( $field->value->data['id'] );
-            if ( ( $binaryFile = $this->IOService->loadBinaryFile( $binaryFileId ) ) === false )
+
+            try
             {
-                throw new NotFoundException( '$field->value->data[id]', $field->value->data['id'] );
+                $binaryFile = $this->IOService->loadBinaryFile( $binaryFileId );
+            }
+            catch ( NotFoundException $e )
+            {
+                return;
             }
 
             $field->value->data['fileSize'] = $binaryFile->size;
@@ -247,7 +266,12 @@ class ImageStorage extends GatewayBasedStorage
                     // If file can't be loaded it might be already deleted for some other language
                     if ( $binaryFile !== false )
                     {
-                        $this->IOService->deleteBinaryFile( $binaryFile );
+                        try
+                        {
+                            $this->IOService->deleteBinaryFile( $binaryFile );
+                        }
+                        // we don't do anything, since the handler will log what needs to be
+                        catch ( NotFoundException $e ) { }
                     }
                 }
             }

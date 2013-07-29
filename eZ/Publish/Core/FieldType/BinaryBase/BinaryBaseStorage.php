@@ -9,6 +9,7 @@
 
 namespace eZ\Publish\Core\FieldType\BinaryBase;
 
+use eZ\Publish\Core\Base\Exceptions\NotFoundException;
 use eZ\Publish\Core\FieldType\GatewayBasedStorage;
 use eZ\Publish\Core\IO\IOService;
 use eZ\Publish\SPI\FieldType\BinaryBase\PathGenerator;
@@ -99,8 +100,7 @@ class BinaryBaseStorage extends GatewayBasedStorage
         $storagePath = $this->pathGenerator->getStoragePathForField( $field, $versionInfo );
 
         // The file referenced in externalData MAY be an existing IOService file which we can use
-        if ( ( $this->IOService->loadBinaryFile( $storedValue['id'] ) === false ) &&
-             ( $this->IOService->loadBinaryFile( $storagePath ) === false ) )
+        if ( ( !$this->IOService->exists( $storedValue['id'] ) ) && ( !$this->IOService->exists( $storagePath ) ) )
         {
             $createStruct = $this->IOService->newBinaryCreateStructFromLocalFile(
                 $storedValue['id']
@@ -157,9 +157,11 @@ class BinaryBaseStorage extends GatewayBasedStorage
 
         if ( $fileCounts[$fileReference['id']] === 0 )
         {
-            $this->IOService->deleteBinaryFile(
-                $this->IOService->loadBinaryFile( $fileReference['id'] )
-            );
+            try {
+                $binaryFile = $this->IOService->loadBinaryFile( $fileReference['id'] );
+                $this->IOService->deleteBinaryFile( $binaryFile );
+            }
+            catch ( NotFoundException $e ) {}
         }
     }
 
@@ -180,14 +182,15 @@ class BinaryBaseStorage extends GatewayBasedStorage
         $field->value->externalData = $this->getGateway( $context )->getFileReferenceData( $field->id, $versionInfo->versionNo );
         if ( $field->value->externalData !== null )
         {
-            if ( ( $binaryFile = $this->IOService->loadBinaryFile( $field->value->externalData['id'] ) ) !== false )
+            try
             {
+                $binaryFile = $this->IOService->loadBinaryFile( $field->value->externalData['id'] );
                 $field->value->externalData['fileSize'] = $binaryFile->size;
                 $field->value->externalData['uri'] = $binaryFile->uri;
             }
-            else
+            catch ( NotFoundException $e )
             {
-                throw new \RuntimeException( "Failed loading binary file {$field->value->externalData['id']}" );
+                return;
             }
         }
     }
@@ -220,9 +223,12 @@ class BinaryBaseStorage extends GatewayBasedStorage
         {
             if ( $count === 0 )
             {
-                $this->IOService->deleteBinaryFile(
-                    $this->IOService->loadBinaryFile( $filePath )
-                );
+                try
+                {
+                    $binaryFile = $this->IOService->loadBinaryFile( $filePath );
+                    $this->IOService->deleteBinaryFile( $binaryFile );
+                }
+                catch ( NotFoundException $e ) { }
             }
         }
     }
