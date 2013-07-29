@@ -116,7 +116,7 @@ class BinaryBaseStorage extends GatewayBasedStorage
 
         $this->removeOldFile( $field->id, $versionInfo->versionNo, $context );
 
-        return $this->getGateway( $context )->storeFileReference( $versionInfo, $field );
+        $this->getGateway( $context )->storeFileReference( $versionInfo, $field );
     }
 
     public function copyLegacyField( VersionInfo $versionInfo, Field $field, Field $originalField, array $context )
@@ -157,11 +157,14 @@ class BinaryBaseStorage extends GatewayBasedStorage
 
         if ( $fileCounts[$fileReference['id']] === 0 )
         {
-            try {
+            try
+            {
                 $binaryFile = $this->IOService->loadBinaryFile( $fileReference['id'] );
                 $this->IOService->deleteBinaryFile( $binaryFile );
             }
-            catch ( NotFoundException $e ) {}
+            catch ( NotFoundException $e )
+            {
+            }
         }
     }
 
@@ -228,7 +231,9 @@ class BinaryBaseStorage extends GatewayBasedStorage
                     $binaryFile = $this->IOService->loadBinaryFile( $filePath );
                     $this->IOService->deleteBinaryFile( $binaryFile );
                 }
-                catch ( NotFoundException $e ) { }
+                catch ( NotFoundException $e )
+                {
+                }
             }
         }
     }
@@ -252,6 +257,5 @@ class BinaryBaseStorage extends GatewayBasedStorage
      */
     public function getIndexData( VersionInfo $versionInfo, Field $field, array $context )
     {
-
     }
 }

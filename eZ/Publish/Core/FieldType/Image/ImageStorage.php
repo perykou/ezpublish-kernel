@@ -117,7 +117,6 @@ class ImageStorage extends GatewayBasedStorage
                 $this->getGateway( $context )->getNodePathString( $versionInfo, $field->id )
             ) . '/' . $field->value->externalData['fileName'];
 
-
             if ( $this->IOService->exists( $targetPath ) )
             {
                 $binaryFile = $this->IOService->loadBinaryFile( $targetPath );
@@ -155,7 +154,7 @@ class ImageStorage extends GatewayBasedStorage
 
             try
             {
-                $this->IOService->loadBinaryFile( $this->IOService->getExternalPath( $field->value->data['id'] ) );
+                $binaryFile = $this->IOService->loadBinaryFile( $this->IOService->getExternalPath( $field->value->data['id'] ) );
                 $metadata = $this->IOService->getMetadata( $this->imageSizeMetadataHandler, $binaryFile );
             }
             catch ( NotFoundException $e )
@@ -219,6 +218,8 @@ class ImageStorage extends GatewayBasedStorage
             // Required since images are stored with their full path, e.g. uri with a Legacy compatible IO handler
             $binaryFileId = $this->IOService->getExternalPath( $field->value->data['id'] );
 
+            $field->value->data['imageId'] = $versionInfo->contentInfo->id . '-' . $field->id;
+
             try
             {
                 $binaryFile = $this->IOService->loadBinaryFile( $binaryFileId );
@@ -229,7 +230,6 @@ class ImageStorage extends GatewayBasedStorage
             }
 
             $field->value->data['fileSize'] = $binaryFile->size;
-            $field->value->data['imageId'] = $versionInfo->contentInfo->id . '-' . $field->id;
             $field->value->data['uri'] = $binaryFile->uri;
         }
     }
@@ -271,7 +271,9 @@ class ImageStorage extends GatewayBasedStorage
                             $this->IOService->deleteBinaryFile( $binaryFile );
                         }
                         // we don't do anything, since the handler will log what needs to be
-                        catch ( NotFoundException $e ) { }
+                        catch ( NotFoundException $e )
+                        {
+                        }
                     }
                 }
             }
