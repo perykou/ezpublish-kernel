@@ -259,20 +259,14 @@ class ImageStorage extends GatewayBasedStorage
                 $gateway->removeImageReferences( $storedFilePath, $versionInfo->versionNo, $fieldId );
                 if ( $gateway->countImageReferences( $storedFilePath ) === 0 )
                 {
-                    // @todo See todo above about full uri
                     $binaryFileId = $this->IOService->getExternalPath( $storedFilePath );
-                    $binaryFile = $this->IOService->loadBinaryFile( $binaryFileId );
-                    // If file can't be loaded it might be already deleted for some other language
-                    if ( $binaryFile !== false )
+                    try
                     {
-                        try
-                        {
-                            $this->IOService->deleteBinaryFile( $binaryFile );
-                        }
-                        // we don't do anything, since the handler will log what needs to be
-                        catch ( NotFoundException $e )
-                        {
-                        }
+                        $binaryFile = $this->IOService->loadBinaryFile( $binaryFileId );
+                        $this->IOService->deleteBinaryFile( $binaryFile );
+                    }
+                    catch ( NotFoundException $e )
+                    {
                     }
                 }
             }

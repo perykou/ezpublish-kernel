@@ -35,7 +35,7 @@ class Legacy implements IOHandlerInterface
     /**
      * File resource provider
      * @see getFileResourceProvider
-     * @var FileReso
+     * @var FileResource
      */
     private $fileResourceProvider = null;
 
@@ -525,7 +525,7 @@ class Legacy implements IOHandlerInterface
             {
                 $this->logger->error( "Legacy file with path $path" );
             }
-            throw new NotFoundException( 'BinaryFile', $path);
+            throw new NotFoundException( 'BinaryFile', $path );
         }
 
         return $returnValue;
