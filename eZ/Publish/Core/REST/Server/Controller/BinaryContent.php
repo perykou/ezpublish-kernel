@@ -71,6 +71,12 @@ class BinaryContent extends RestController
             throw new Exceptions\NotFoundException( "No image field with ID $fieldId could be found" );
         }
 
+        // check the field's value
+        if ( $field->value['id'] === null )
+        {
+            throw new Exceptions\NotFoundException( "Image file with id {$field->value['id']} doesn't exist" );
+        }
+
         $versionInfo = $this->repository->getContentService()->loadVersionInfo( $content->contentInfo );
 
         try
