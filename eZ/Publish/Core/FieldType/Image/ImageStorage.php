@@ -216,12 +216,12 @@ class ImageStorage extends GatewayBasedStorage
         {
             // @todo wrap this within a dedicated service that uses the handler + service under the hood
             // Required since images are stored with their full path, e.g. uri with a Legacy compatible IO handler
-            $field->value->data['id'] = $this->IOService->getExternalPath( $field->value->data['id'] );
+            $binaryFileId = $this->IOService->getExternalPath( $field->value->data['id'] );
             $field->value->data['imageId'] = $versionInfo->contentInfo->id . '-' . $field->id;
 
             try
             {
-                $binaryFile = $this->IOService->loadBinaryFile( $field->value->data['id'] );
+                $binaryFile = $this->IOService->loadBinaryFile( $binaryFileId );
             }
             catch ( NotFoundException $e )
             {
