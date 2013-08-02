@@ -44,6 +44,11 @@ class Root extends ValueObjectVisitor
         $generator->endAttribute( 'href' );
         $generator->endObjectElement( 'contentTypes' );
 
+        $generator->startObjectElement( 'contentTypeGroups', 'ContentTypeGroupList' );
+        $generator->startAttribute( 'href', $this->templateRouter->generate( 'ezpublish_rest_loadContentTypeGroupList' ) );
+        $generator->endAttribute( 'href' );
+        $generator->endObjectElement( 'contentTypeGroups' );
+
         $generator->startObjectElement( 'users', 'UserRefList' );
         $generator->startAttribute( 'href', $this->router->generate( 'ezpublish_rest_loadUsers' ) );
         $generator->endAttribute( 'href' );
@@ -84,6 +89,39 @@ class Root extends ValueObjectVisitor
         $generator->startAttribute( 'href', $this->router->generate( 'ezpublish_rest_createView' ) );
         $generator->endAttribute( 'href' );
         $generator->endObjectElement( 'views' );
+
+        $generator->startObjectElement( 'locationsByRemoteId', 'LocationList' );
+        $generator->startAttribute(
+            'href',
+            $this->templateRouter->generate(
+                'ezpublish_rest_redirectLocation',
+                array( 'remoteId' => '{remoteId}' )
+            )
+        );
+        $generator->endAttribute( 'href' );
+        $generator->endObjectElement( 'locationsByRemoteId' );
+
+        $generator->startObjectElement( 'contentByRemoteId', 'ContentList' );
+        $generator->startAttribute(
+            'href',
+            $this->templateRouter->generate(
+                'ezpublish_rest_redirectContent',
+                array( 'remoteId' => '{remoteId}' )
+            )
+        );
+        $generator->endAttribute( 'href' );
+        $generator->endObjectElement( 'contentByRemoteId' );
+
+        $generator->startObjectElement( 'contentTypeByIdentifier', 'ContentTypeList' );
+        $generator->startAttribute(
+            'href',
+            $this->templateRouter->generate(
+                'ezpublish_rest_listContentTypes',
+                array( 'identifier' => '{identifier}' )
+            )
+        );
+        $generator->endAttribute( 'href' );
+        $generator->endObjectElement( 'contentTypeByIdentifier' );
 
         // @todo object states?
         // @todo url aliases?
