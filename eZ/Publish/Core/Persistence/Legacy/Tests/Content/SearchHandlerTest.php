@@ -95,6 +95,14 @@ class SearchHandlerTest extends LanguageAwareTestCase
             $rules[] = str_replace( self::getInstallationDir(), '', $file );
         }
 
+        $transformationProcessor = new Content\Search\TransformationProcessor\DefinitionBased(
+            new Content\Search\TransformationProcessor\DefinitionBased\Parser( self::getInstallationDir() ),
+            new Content\Search\TransformationProcessor\PcreCompiler(
+                new Content\Search\Utf8Converter()
+            ),
+            $rules
+        );
+
         return new Content\Search\Handler(
             new Content\Search\Gateway\EzcDatabase(
                 $this->getDatabaseHandler(),
@@ -150,13 +158,7 @@ class SearchHandlerTest extends LanguageAwareTestCase
                         ),
                         new Content\Search\Gateway\CriterionHandler\FullText(
                             $this->getDatabaseHandler(),
-                            new Content\Search\TransformationProcessor\DefinitionBased(
-                                new Content\Search\TransformationProcessor\DefinitionBased\Parser( self::getInstallationDir() ),
-                                new Content\Search\TransformationProcessor\PcreCompiler(
-                                    new Content\Search\Utf8Converter()
-                                ),
-                                $rules
-                            ),
+                            $transformationProcessor,
                             $fullTextSearchConfiguration
                         ),
                         new Content\Search\Gateway\CriterionHandler\Field(
@@ -168,7 +170,8 @@ class SearchHandlerTest extends LanguageAwareTestCase
                                     'ezprice' => new Integer(),
                                     'ezurl' => new Url()
                                 )
-                            )
+                            ),
+                            $transformationProcessor
                         ),
                         new Content\Search\Gateway\CriterionHandler\ObjectStateId(
                             $this->getDatabaseHandler()
@@ -178,6 +181,9 @@ class SearchHandlerTest extends LanguageAwareTestCase
                             $this->getLanguageMaskGenerator()
                         ),
                         new Content\Search\Gateway\CriterionHandler\Visibility(
+                            $this->getDatabaseHandler()
+                        ),
+                        new Content\Search\Gateway\CriterionHandler\UserMetadata(
                             $this->getDatabaseHandler()
                         ),
                     )
@@ -694,7 +700,7 @@ class SearchHandlerTest extends LanguageAwareTestCase
     public function testContentTypeIdFilter()
     {
         $this->assertSearchResults(
-            array( 10, 14 ),
+            array( 10, 14, 226 ),
             $this->getContentSearchHandler()->findContent(
                 new Query(
                     array(
@@ -735,7 +741,7 @@ class SearchHandlerTest extends LanguageAwareTestCase
     public function testContentTypeGroupFilter()
     {
         $this->assertSearchResults(
-            array( 4, 10, 11, 12, 13, 14, 42, 225 ),
+            array( 4, 10, 11, 12, 13, 14, 42, 225, 226 ),
             $this->getContentSearchHandler()->findContent(
                 new Query(
                     array(
@@ -755,7 +761,7 @@ class SearchHandlerTest extends LanguageAwareTestCase
     public function testDateMetadataFilterModifiedGreater()
     {
         $this->assertSearchResults(
-            array( 11, 225 ),
+            array( 11, 225, 226 ),
             $this->getContentSearchHandler()->findContent(
                 new Query(
                     array(
@@ -779,7 +785,7 @@ class SearchHandlerTest extends LanguageAwareTestCase
     public function testDateMetadataFilterModifiedGreaterOrEqual()
     {
         $this->assertSearchResults(
-            array( 11, 14, 225 ),
+            array( 11, 14, 225, 226 ),
             $this->getContentSearchHandler()->findContent(
                 new Query(
                     array(
@@ -803,7 +809,7 @@ class SearchHandlerTest extends LanguageAwareTestCase
     public function testDateMetadataFilterModifiedIn()
     {
         $this->assertSearchResults(
-            array( 11, 14, 225 ),
+            array( 11, 14, 225, 226 ),
             $this->getContentSearchHandler()->findContent(
                 new Query(
                     array(
@@ -827,7 +833,7 @@ class SearchHandlerTest extends LanguageAwareTestCase
     public function testDateMetadataFilterModifiedBetween()
     {
         $this->assertSearchResults(
-            array( 11, 14, 225 ),
+            array( 11, 14, 225, 226 ),
             $this->getContentSearchHandler()->findContent(
                 new Query(
                     array(
@@ -982,7 +988,7 @@ class SearchHandlerTest extends LanguageAwareTestCase
     public function testSectionFilter()
     {
         $this->assertSearchResults(
-            array( 4, 10, 11, 12, 13, 14, 42 ),
+            array( 4, 10, 11, 12, 13, 14, 42, 226 ),
             $this->getContentSearchHandler()->findContent(
                 new Query(
                     array(
@@ -1343,6 +1349,238 @@ class SearchHandlerTest extends LanguageAwareTestCase
                         ),
                         'limit' => 10,
                         'sortClauses' => array( new SortClause\ContentId ),
+                    )
+                )
+            )
+        );
+    }
+
+    /**
+     * @return void
+     * @covers \eZ\Publish\Core\Persistence\Legacy\Content\Search\Gateway\CriterionHandler\UserMetadata
+     * @covers \eZ\Publish\Core\Persistence\Legacy\Content\Search\Gateway\EzcDatabase
+     */
+    public function testUserMetadataFilterOwnerWrongUserId()
+    {
+        $this->assertSearchResults(
+            array(),
+            $this->getContentSearchHandler()->findContent(
+                new Query(
+                    array(
+                        'criterion' => new Criterion\UserMetadata(
+                            Criterion\UserMetadata::OWNER,
+                            Criterion\Operator::EQ,
+                            2
+                        ),
+                    )
+                )
+            )
+        );
+    }
+
+    /**
+     * @return void
+     * @covers \eZ\Publish\Core\Persistence\Legacy\Content\Search\Gateway\CriterionHandler\UserMetadata
+     * @covers \eZ\Publish\Core\Persistence\Legacy\Content\Search\Gateway\EzcDatabase
+     */
+    public function testUserMetadataFilterOwnerAdministrator()
+    {
+        $this->assertSearchResults(
+            array( 4, 10, 11, 12, 13, 14, 41, 42, 45, 49 ),
+            $this->getContentSearchHandler()->findContent(
+                new Query(
+                    array(
+                        'criterion' => new Criterion\UserMetadata(
+                            Criterion\UserMetadata::OWNER,
+                            Criterion\Operator::EQ,
+                            14
+                        ),
+                        'limit' => 10,
+                        'sortClauses' => array( new SortClause\ContentId ),
+                    )
+                )
+            )
+        );
+    }
+
+    /**
+     * @return void
+     * @covers \eZ\Publish\Core\Persistence\Legacy\Content\Search\Gateway\CriterionHandler\UserMetadata
+     * @covers \eZ\Publish\Core\Persistence\Legacy\Content\Search\Gateway\EzcDatabase
+     */
+    public function testUserMetadataFilterOwnerEqAMember()
+    {
+        $this->assertSearchResults(
+            array( 223 ),
+            $this->getContentSearchHandler()->findContent(
+                new Query(
+                    array(
+                        'criterion' => new Criterion\UserMetadata(
+                            Criterion\UserMetadata::OWNER,
+                            Criterion\Operator::EQ,
+                            226
+                        ),
+                    )
+                )
+            )
+        );
+    }
+
+    /**
+     * @return void
+     * @covers \eZ\Publish\Core\Persistence\Legacy\Content\Search\Gateway\CriterionHandler\UserMetadata
+     * @covers \eZ\Publish\Core\Persistence\Legacy\Content\Search\Gateway\EzcDatabase
+     */
+    public function testUserMetadataFilterOwnerInAMember()
+    {
+        $this->assertSearchResults(
+            array( 223 ),
+            $this->getContentSearchHandler()->findContent(
+                new Query(
+                    array(
+                        'criterion' => new Criterion\UserMetadata(
+                            Criterion\UserMetadata::OWNER,
+                            Criterion\Operator::IN,
+                            array( 226 )
+                        ),
+                    )
+                )
+            )
+        );
+    }
+
+    /**
+     * @return void
+     * @covers \eZ\Publish\Core\Persistence\Legacy\Content\Search\Gateway\CriterionHandler\UserMetadata
+     * @covers \eZ\Publish\Core\Persistence\Legacy\Content\Search\Gateway\EzcDatabase
+     */
+    public function testUserMetadataFilterCreatorEqAMember()
+    {
+        $this->assertSearchResults(
+            array( 223 ),
+            $this->getContentSearchHandler()->findContent(
+                new Query(
+                    array(
+                        'criterion' => new Criterion\UserMetadata(
+                            Criterion\UserMetadata::MODIFIER,
+                            Criterion\Operator::EQ,
+                            226
+                        ),
+                    )
+                )
+            )
+        );
+    }
+
+    /**
+     * @return void
+     * @covers \eZ\Publish\Core\Persistence\Legacy\Content\Search\Gateway\CriterionHandler\UserMetadata
+     * @covers \eZ\Publish\Core\Persistence\Legacy\Content\Search\Gateway\EzcDatabase
+     */
+    public function testUserMetadataFilterCreatorInAMember()
+    {
+        $this->assertSearchResults(
+            array( 223 ),
+            $this->getContentSearchHandler()->findContent(
+                new Query(
+                    array(
+                        'criterion' => new Criterion\UserMetadata(
+                            Criterion\UserMetadata::MODIFIER,
+                            Criterion\Operator::IN,
+                            array( 226 )
+                        ),
+                    )
+                )
+            )
+        );
+    }
+
+    /**
+     * @return void
+     * @covers \eZ\Publish\Core\Persistence\Legacy\Content\Search\Gateway\CriterionHandler\UserMetadata
+     * @covers \eZ\Publish\Core\Persistence\Legacy\Content\Search\Gateway\EzcDatabase
+     */
+    public function testUserMetadataFilterEqGroupMember()
+    {
+        $this->assertSearchResults(
+            array( 223 ),
+            $this->getContentSearchHandler()->findContent(
+                new Query(
+                    array(
+                        'criterion' => new Criterion\UserMetadata(
+                            Criterion\UserMetadata::GROUP,
+                            Criterion\Operator::EQ,
+                            11
+                        ),
+                    )
+                )
+            )
+        );
+    }
+
+    /**
+     * @return void
+     * @covers \eZ\Publish\Core\Persistence\Legacy\Content\Search\Gateway\CriterionHandler\UserMetadata
+     * @covers \eZ\Publish\Core\Persistence\Legacy\Content\Search\Gateway\EzcDatabase
+     */
+    public function testUserMetadataFilterInGroupMember()
+    {
+        $this->assertSearchResults(
+            array( 223 ),
+            $this->getContentSearchHandler()->findContent(
+                new Query(
+                    array(
+                        'criterion' => new Criterion\UserMetadata(
+                            Criterion\UserMetadata::GROUP,
+                            Criterion\Operator::IN,
+                            array( 11 )
+                        ),
+                    )
+                )
+            )
+        );
+    }
+
+    /**
+     * @return void
+     * @covers \eZ\Publish\Core\Persistence\Legacy\Content\Search\Gateway\CriterionHandler\UserMetadata
+     * @covers \eZ\Publish\Core\Persistence\Legacy\Content\Search\Gateway\EzcDatabase
+     */
+    public function testUserMetadataFilterEqGroupMemberNoMatch()
+    {
+        $this->assertSearchResults(
+            array(),
+            $this->getContentSearchHandler()->findContent(
+                new Query(
+                    array(
+                        'criterion' => new Criterion\UserMetadata(
+                            Criterion\UserMetadata::GROUP,
+                            Criterion\Operator::EQ,
+                            13
+                        ),
+                    )
+                )
+            )
+        );
+    }
+
+    /**
+     * @return void
+     * @covers \eZ\Publish\Core\Persistence\Legacy\Content\Search\Gateway\CriterionHandler\UserMetadata
+     * @covers \eZ\Publish\Core\Persistence\Legacy\Content\Search\Gateway\EzcDatabase
+     */
+    public function testUserMetadataFilterInGroupMemberNoMatch()
+    {
+        $this->assertSearchResults(
+            array(),
+            $this->getContentSearchHandler()->findContent(
+                new Query(
+                    array(
+                        'criterion' => new Criterion\UserMetadata(
+                            Criterion\UserMetadata::GROUP,
+                            Criterion\Operator::IN,
+                            array( 13 )
+                        ),
                     )
                 )
             )

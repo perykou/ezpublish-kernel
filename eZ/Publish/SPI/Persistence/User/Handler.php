@@ -44,16 +44,31 @@ interface Handler
     public function load( $userId );
 
     /**
-     * Loads user(s) with user login / email.
+     * Loads user with user login.
      *
-     * Optimized for login use (hence the possibility to match email and return several users).
+     * Note: This method loads user by $login case in-sensitive on certain storage engines!
      *
      * @param string $login
-     * @param boolean $alsoMatchEmail Also match user email, caller must verify that $login is a valid email address.
+     *
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException If user is not found
+     *
+     * @return \eZ\Publish\SPI\Persistence\User
+     */
+    public function loadByLogin( $login );
+
+    /**
+     * Loads user(s) with user email.
+     *
+     * As earlier eZ Publish versions supported several users having same email (ini config),
+     * this function may return several users.
+     *
+     * Note: This method loads user by $email case in-sensitive on certain storage engines!
+     *
+     * @param string $email
      *
      * @return \eZ\Publish\SPI\Persistence\User[]
      */
-    public function loadByLogin( $login, $alsoMatchEmail = false );
+    public function loadByEmail( $email );
 
     /**
      * Update the user information specified by the user struct

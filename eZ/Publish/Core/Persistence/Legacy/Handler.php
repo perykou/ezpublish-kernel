@@ -489,7 +489,8 @@ class Handler implements HandlerInterface
                                 ),
                                 new CriterionHandler\Field(
                                     $db,
-                                    $this->converterRegistry
+                                    $this->converterRegistry,
+                                    $this->transformationProcessor
                                 ),
                                 new CriterionHandler\ObjectStateId( $db ),
                                 new CriterionHandler\LanguageCode(
@@ -497,6 +498,7 @@ class Handler implements HandlerInterface
                                     $this->getLanguageMaskGenerator()
                                 ),
                                 new CriterionHandler\Visibility( $db ),
+                                new CriterionHandler\UserMetadata( $db ),
                             )
                         ),
                         new Content\Search\Gateway\SortClauseConverter(
