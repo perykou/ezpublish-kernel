@@ -482,7 +482,6 @@ class Handler implements HandlerInterface
                                 new CriterionHandler\RemoteId( $db ),
                                 new CriterionHandler\LocationRemoteId( $db ),
                                 new CriterionHandler\SectionId( $db ),
-                                new CriterionHandler\Status( $db ),
                                 new CriterionHandler\FullText(
                                     $db,
                                     $this->transformationProcessor
