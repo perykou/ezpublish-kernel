@@ -9,12 +9,16 @@
 
 namespace eZ\Bundle\EzPublishCoreBundle\Routing;
 
+use eZ\Publish\Core\MVC\ConfigResolverInterface;
 use eZ\Publish\Core\MVC\Symfony\SiteAccess;
 use eZ\Publish\Core\MVC\Symfony\SiteAccess\SiteAccessAware;
 use eZ\Publish\Core\MVC\Symfony\SiteAccess\URILexer;
 use Symfony\Bundle\FrameworkBundle\Routing\Router;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Routing\Matcher\RequestMatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\RequestContext;
 
 /**
  * Extension of Symfony default router implementing RequestMatcherInterface
@@ -27,6 +31,17 @@ class DefaultRouter extends Router implements RequestMatcherInterface, SiteAcces
     protected $siteAccess;
 
     protected $nonSiteAccessAwareRoutes = array();
+
+    /**
+     * @var \Symfony\Component\DependencyInjection\ContainerInterface
+     */
+    protected $serviceContainer;
+
+    public function __construct( ContainerInterface $container, $resource, array $options = array(), RequestContext $context = null )
+    {
+        $this->serviceContainer = $container;
+        parent::__construct( $container, $resource, $options, $context );
+    }
 
     public function setSiteAccess( SiteAccess $siteAccess = null )
     {
@@ -45,6 +60,14 @@ class DefaultRouter extends Router implements RequestMatcherInterface, SiteAcces
     }
 
     /**
+     * @return ConfigResolverInterface
+     */
+    public function getConfigResolver()
+    {
+        return $this->serviceContainer->get( 'ezpublish.config.resolver' );
+    }
+
+    /**
      * @param \Symfony\Component\HttpFoundation\Request $request The request to match
      *
      * @return array An array of parameters
@@ -54,6 +77,10 @@ class DefaultRouter extends Router implements RequestMatcherInterface, SiteAcces
      */
     public function matchRequest( Request $request )
     {
+        $configResolver = $this->getConfigResolver();
+        if ( $configResolver && $configResolver->getParameter( 'legacy_mode' ) === true )
+            throw new ResourceNotFoundException( "Legacy mode activated, default router is bypassed" );
+
         if ( $request->attributes->has( 'semanticPathinfo' ) )
         {
             return $this->match( $request->attributes->get( 'semanticPathinfo' ) );
